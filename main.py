@@ -1,9 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox
 
+from pdf import generate_pdf
+
 def on_button_click():
     testo = entry.get()
     messagebox.showinfo("Messaggio", f"Hai scritto: {testo}")
+    generate_pdf(testo)
 
 finestra = tk.Tk()
 finestra.title("QR generator")
