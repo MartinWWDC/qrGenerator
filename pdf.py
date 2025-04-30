@@ -4,11 +4,37 @@ import qrcode
 import webbrowser
 import os
 
+from svg import crea_layer_testo_con_immagine, unisci_pdf
+
 
 def fetchBFInfo(id):
     url = 'https://api.bikeflip.com/api/v1/bike-ads/'+id
     response = requests.get(url).json()['data']
-    return [response['bike_model_text'], response['bike_brand']['name'], response['model_year']]
+    
+
+    dati = {
+        "model_text": response['bike_model_text'],
+        "brand_name": response['bike_brand']['name'],
+        "year": str(response['model_year']),
+        "size": response['sizes'][0]['title']
+    }
+
+    posizioni = {
+        "model_text": (50, 410),
+        "brand_name": (50, 325),
+        "year": (50, 235),
+        "size": (50, 150)  
+    }
+
+
+    dimensioni_font = {
+        "model_text": 25,
+        "brand_name": 25,
+        "year": 25,
+        "size": 25
+    }
+
+    return [dati, posizioni, dimensioni_font]
 
 
 def generate_pdf(id):
@@ -18,33 +44,27 @@ def generate_pdf(id):
     qr_img_path = "qr_temp.png"
     qr_img.save(qr_img_path)
 
-    pdf = FPDF(orientation='L')
-    pdf.add_page()
-    pdf.set_font('helvetica', size=12)
+    img_pos = (546, 177)              
+    img_size = (170, 170)             
 
-    page_width = pdf.w
-    page_height = pdf.h
+    template_pdf = "cartellino_template.pdf"
+    output_pdf = id+'.pdf'
+    dimensione_pagina = (21000,29700)  
 
-    margin = 10
-    column_width = (page_width - 2 * margin) / 2
+    layer = crea_layer_testo_con_immagine(
+        items[0],
+        items[1],
+        items[2],
+        qr_img_path,
+        img_pos,
+        img_size,
+        dimensione_pagina
+    )
+    unisci_pdf(template_pdf, layer, output_pdf)
 
-    line_height = 10
-    text_block_height = len(items) * line_height
-
-    start_y_text = (page_height - text_block_height) / 2
-    pdf.set_xy(margin, start_y_text)
-    for item in items:
-        pdf.cell(column_width, line_height, str(item), ln=1)
-
-    qr_size = 120  # <-- nuovo valore ingrandito
-    qr_x = margin + column_width + 10
-    qr_y = (page_height - qr_size) / 2
-    pdf.image(qr_img_path, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
-
-    pdf.output(id+".pdf")
+    print("✅ PDF finale generato con successo:", output_pdf)
     webbrowser.open_new(os.path.abspath(id+".pdf"))
     
     
 
 
-generate_pdf('126334')
